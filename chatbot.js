@@ -1,12 +1,66 @@
-<div id="chatbot-widget" style="border:1px solid #ccc; width:300px; height:400px; display:flex; flex-direction:column; font-family:Arial, sans-serif;">
-  <div id="chat-log" style="flex:1; padding:10px; overflow-y:auto; background:#f9f9f9;"></div>
-  <div style="display:flex; border-top:1px solid #ccc;">
+<div id="chatbot-widget">
+  <div id="chat-log"></div>
+  <div class="chat-input-area">
     <input id="chat-input" type="text" placeholder="Type your question..." 
- style="flex:1; padding:8px; border:none; outline:none;" 
  onkeypress="if(event.key===&#39;Enter&#39;){searchPosts();}" />
-    <button onclick="searchPosts()" style="padding:8px; border:none; background:#0078d7; color:white; cursor:pointer;">Send</button>
+    <button onclick="searchPosts()">Send</button>
   </div>
 </div>
+
+<style>
+#chatbot-widget {
+  width: 320px;
+  height: 450px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  overflow: hidden;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  background: linear-gradient(135deg, #004080, #0078d7); /* telecom-inspired gradient */
+  color: white;
+}
+
+#chat-log {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+  background: rgba(255,255,255,0.1); /* semi-transparent overlay */
+}
+
+.chat-input-area {
+  display: flex;
+  border-top: 1px solid rgba(255,255,255,0.3);
+  background: rgba(0,0,0,0.2);
+}
+
+#chat-input {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: white;
+}
+
+#chat-input::placeholder {
+  color: #ddd;
+}
+
+button {
+  padding: 10px 15px;
+  border: none;
+  background: #00c853; /* green accent */
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+button:hover {
+  background: #009624;
+}
+</style>
 
 <script>
 async function loadFeed() {
@@ -20,7 +74,15 @@ async function loadFeed() {
   let posts = [];
   items.forEach(item => {
     const title = item.querySelector("title")?.textContent || "";
-    const link = item.querySelector("link")?.getAttribute("href") || "";
+
+    // Get the correct post link (rel="alternate")
+    let link = "";
+    item.querySelectorAll("link").forEach(l => {
+      if (l.getAttribute("rel") === "alternate") {
+        link = l.getAttribute("href");
+      }
+    });
+
     let content = item.querySelector("content")?.textContent || item.querySelector("summary")?.textContent || "";
     content = content.replace(/<[^>]+>/g, " "); // strip HTML
     posts.push({ title, link, content });
@@ -53,16 +115,14 @@ function searchPosts() {
   if (!query) return;
   addMessage("You", query, true);
 
-  // Remove punctuation (question marks, full stops, commas, etc.)
+  // Remove punctuation
   query = query.replace(/[?.!,]/g, "");
 
-  // Define stopwords to ignore
+  // Stopwords
   const stopwords = ["what","how","where","when","why","is","the","a","an","of","in","on","to","for","with","and","or"];
-
-  // Break query into keywords, filter out stopwords
   const keywords = query.split(/\s+/).filter(k => k.length > 2 && !stopwords.includes(k));
 
-  // Score posts by keyword matches
+  // Score posts
   const scored = cachedPosts.map(p => {
     const text = (p.title + " " + p.content).toLowerCase();
     let score = 0;
@@ -70,7 +130,6 @@ function searchPosts() {
     return { ...p, score };
   }).filter(p => p.score > 0);
 
-  // Sort by score (highest first)
   scored.sort((a,b) => b.score - a.score);
 
   if (scored.length > 0) {
