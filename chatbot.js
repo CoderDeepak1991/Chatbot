@@ -92,7 +92,6 @@ async function loadFeed() {
 
 let cachedPosts = [];
 loadFeed().then(posts => cachedPosts = posts);
-
 function addMessage(sender, text, isUser=false) {
   const log = document.getElementById("chat-log");
   const bubble = document.createElement("div");
@@ -107,7 +106,31 @@ function addMessage(sender, text, isUser=false) {
   bubble.innerHTML = `<b>${sender}:</b> ${text}`;
   log.appendChild(bubble);
   log.scrollTop = log.scrollHeight;
+
+  // ✅ Save message to localStorage
+  let history = JSON.parse(localStorage.getItem("chatHistory") || "[]");
+  history.push({ sender, text, isUser });
+  localStorage.setItem("chatHistory", JSON.stringify(history));
 }
+
+// ✅ Restore chat history when page loads
+window.onload = function() {
+  const log = document.getElementById("chat-log");
+  let history = JSON.parse(localStorage.getItem("chatHistory") || "[]");
+  history.forEach(msg => {
+    const bubble = document.createElement("div");
+    bubble.style.margin = "5px 0";
+    bubble.style.padding = "8px";
+    bubble.style.borderRadius = "10px";
+    bubble.style.maxWidth = "80%";
+    bubble.style.wordWrap = "break-word";
+    bubble.style.background = msg.isUser ? "#0078d7" : "#e5e5ea";
+    bubble.style.color = msg.isUser ? "white" : "black";
+    bubble.style.alignSelf = msg.isUser ? "flex-end" : "flex-start";
+    bubble.innerHTML = `<b>${msg.sender}:</b> ${msg.text}`;
+    log.appendChild(bubble);
+  });
+};
 
 function searchPosts() {
   const inputEl = document.getElementById("chat-input");
