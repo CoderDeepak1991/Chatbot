@@ -1,1 +1,1 @@
-# Chatbot
+# This is a chat bot code using java script for blogger
